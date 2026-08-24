@@ -80,6 +80,9 @@ export default function CustomsRiskReview() {
   const [waking, setWaking] = useState(false);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState(null);
+  const fileInputRef = React.useRef(null);
 
   const loadDeclarations = useCallback(async () => {
     setLoading(true);
@@ -136,6 +139,30 @@ export default function CustomsRiskReview() {
     }
   }
 
+  async function handleFileUpload(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API_BASE}/declarations/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || `Server responded with ${res.status}`);
+      setUploadMessage({ ok: true, text: data.message + (data.errors && data.errors.length ? ` (${data.errors.length} row issue(s))` : "") });
+      await loadDeclarations();
+    } catch (err) {
+      setUploadMessage({ ok: false, text: err.message || "Upload failed" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   return (
     <div
       style={{
@@ -188,6 +215,50 @@ export default function CustomsRiskReview() {
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: error ? COLORS.crimson : COLORS.teal, display: "inline-block" }} />
             {error ? "Connection issue" : "Live — connected to backend"}
           </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <a
+              href={`${API_BASE}/declarations/upload/template`}
+              style={{
+                fontSize: 11.5,
+                color: COLORS.paperDim,
+                textDecoration: "underline",
+                alignSelf: "center",
+              }}
+            >
+              Download CSV template
+            </a>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileUpload}
+              style={{ display: "none" }}
+            />
+            <button
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              disabled={uploading}
+              style={{
+                background: COLORS.teal,
+                border: "none",
+                color: COLORS.ink,
+                borderRadius: 3,
+                padding: "7px 14px",
+                fontSize: 12.5,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              {uploading ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : null}
+              {uploading ? "Uploading…" : "Upload declarations CSV"}
+            </button>
+          </div>
+          {uploadMessage && (
+            <div style={{ fontSize: 11.5, color: uploadMessage.ok ? COLORS.teal : COLORS.crimson, maxWidth: 260, textAlign: "right" }}>
+              {uploadMessage.text}
+            </div>
+          )}
         </div>
       </header>
 
