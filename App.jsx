@@ -240,7 +240,7 @@ export default function CustomsRiskReview() {
       {!loading && !error && (
       <div style={{ display: "flex", gap: 1, background: COLORS.inkBorder, margin: "0 32px", marginTop: 24 }}>
         {[
-          { label: "Pending review", value: pending.length, icon: Package, color: COLORS.paper },
+          { label: "Pending review", value: records.length, icon: Package, color: COLORS.paper },
           { label: "High risk", value: highCount, icon: AlertTriangle, color: COLORS.crimson },
           { label: "Medium risk", value: mediumCount, icon: FileWarning, color: COLORS.amber },
           { label: "Est. duty at risk", value: `$${revenueAtRisk.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, icon: TrendingUp, color: COLORS.teal },
